@@ -13,8 +13,8 @@ router.post('/login', async (req, res) => {
   const validPassword = await bcrypt.compare(password, user.password);
   if (!validPassword) return res.status(400).json({ message: 'INCORRECT PASSWORD' });
 
-  const token = jwt.sign({ _id: user._id, role: user.role }, process.env.SECRET, { expiresIn: '1m' });
-  res.header('Authorization', token).json({ token });
+  const token = jwt.sign({ _id: user._id, role: user.role, name: user.name, email: user.email }, process.env.SECRET, { expiresIn: '10m' });
+  res.header('Authorization', token).json({ token, id: user._id, role: user.role, name: user.name, email: user.email });
 });
 
 
@@ -27,40 +27,20 @@ router.post("/", (req, res) => {
     .catch((error) => res.json({ message: error }));
 });
 
+
 //GET NAME, ROLE, IMAGE OF THE USER (YOU NEED THIS ONE FOR ALL THE PAGES)
 router.get("/user/:id", auth, (req, res) => {
   const { id } = req.params;
   userSchema
     .findById(id)
-    .select("name image role") // Seleccionar solo los campos deseados
+    .select("name email image role") // Seleccionar solo los campos deseados
     .then((data) => res.json(data))
     .catch((error) => res.json({ message: error }));
 });
 
-//ACTUALIZAR UN USUARIO
-router.put("/:id", (req, res) => {
-  const { id } = req.params;
-  const { name, age, email } = req.body;
-  userSchema
-    .updateOne({ _id: id }, { $set: { name, age, email } })
-    .then((data) => res.json(data))
-    .catch((error) => res.json({ message: error }));
-});
-
-//ELIMINAR UN USUARIO
-router.delete("/:id", (req, res) => {
-  const { id } = req.params;
-  userSchema
-    .deleteOne({ _id: id })
-    .then((data) => res.json(data))
-    .catch((error) => res.json({ message: error }));
-});
-
-
-//END POINTS FOR TESTING
 
 //GET USER
-router.get("/:id", (req, res) => {
+router.get("/:id", auth, (req, res) => {
   const { id } = req.params;
   userSchema
     .findById(id)
@@ -69,7 +49,7 @@ router.get("/:id", (req, res) => {
 });
 
 //GET USERS (JUST FOR TEST)
-router.get("/", auth, (req, res) => {
+router.get("/", (req, res) => {
   userSchema
     .find()
     .then((data) => res.json(data))
